@@ -24,7 +24,7 @@ def main(args: Array[String]) {
         val iters = if (args.length > 1) args(1).toInt else 20
         val lines = spark.read.textFile(args(0)).rdd
         val links = lines.map{ s => val parts = s.split("\\s+")
-        (parts(0), parts(1)) }.distinct().groupByKey().repartition(40).cache()
+        (parts(0), parts(1)) }.distinct().groupByKey().repartition(20).cache()
         var ranks = links.mapValues(v => 1.0)
         
         for (i <- 1 to iters) {

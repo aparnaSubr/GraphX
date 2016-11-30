@@ -36,6 +36,6 @@ def main(args: Array[String]) {
         
         val output = ranks.collect()
         spark.stop()
-        //output.foreach(tup => println(tup._1 + " has rank: " + tup._2 + "."))
+        output.foreach(tup => println(tup._1 + " has rank: " + tup._2 + "."))
     }
 }

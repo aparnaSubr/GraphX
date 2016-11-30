@@ -8,8 +8,8 @@ import org.apache.spark.ml.linalg.{Vector, Vectors}
 
 object GraphXPageRank {
 
-def runPageRank[VD: ClassTag, ED: ClassTag](
-    graph: Graph[VD, ED], numIter: Int, resetProb: Double = 0.15): Graph[Double, Double] =
+def runPageRank[VD: ClassTag, ED: ClassTag]
+    (graph: Graph[VD, ED], numIter: Int, resetProb: Double = 0.15) : Graph[Double, Double] =
     {
         val src: VertexId = (-1L)
 

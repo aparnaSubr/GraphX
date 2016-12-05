@@ -1,7 +1,6 @@
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
-import scala.reflect.ClassTag
 
 object GraphXQuery1 {
 
@@ -57,10 +56,24 @@ def main(args: Array[String]) {
 
         val graph = Graph(vertexRDD, edgeRDD, defaultVertex)
 
+        // Query 1
         val edgeCount = graph.triplets.filter{x => x.srcAttr.asInstanceOf[Long] > x.dstAttr.asInstanceOf[Long]}.count()
 
 
-        spark.stop()
+        // Query 2
+        def max(a: (VertexId, Int), b: (VertexId, Int)): (VertexId, Int) = {
+          if (a._2 > b._2) a else b
+          }
 
+        val maxVertex: (VertexId, Int) = graph.outDegrees.reduce(max)
+        val listOfVertices = graph.outDegrees.filter{x => x._2 == maxVertex._2}
+        val intVertices = graph.vertices.map{x =>
+                                             (x._1, x._2.asInstanceOf[Long])}
+        def maxLong(a: (VertexId, Long), b: (VertexId, Long)): (VertexId, Long) = {
+        if (a._2 > b._2) a else b}
+        val maxWords = intVertices.reduce(maxLong)
+
+        val result = graph.vertices.filter{x => x._2 == maxWords._2}.collect()
+        spark.stop()
     }
 }

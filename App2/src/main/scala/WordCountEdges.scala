@@ -58,6 +58,9 @@ def main(args: Array[String]) {
 
         // Query 1
         val edgeCount = graph.triplets.filter{x => x.srcAttr.asInstanceOf[Long] > x.dstAttr.asInstanceOf[Long]}.count()
+        val resultRDD = spark.sparkContext.parallelize(Array(edgeCount))
+        resultRDD.collect().foreach(x => println("--------------------------------------------------------------\nNUMBER OF EDGES = " 
+                                    + x + "\n--------------------------------------------------------------"))
 
 
         // Query 2
@@ -74,6 +77,18 @@ def main(args: Array[String]) {
         val maxWords = intVertices.reduce(maxLong)
 
         val result = graph.vertices.filter{x => x._2 == maxWords._2}.collect()
+        result.foreach(x => println("--------------------------------------------------------------\nMOST POPULAR VERTEX ID = "
+                                    + x._1 + "\n--------------------------------------------------------------"))
+
+
+        // Query 3
+        val numberOfWords: VertexRDD[(Long, Long)] = graph.aggregateMessages[(Long, Long)] (
+                                                    triplet => {
+                                                    triplet.sendToDst(1.toLong, triplet.srcAttr.asInstanceOf[Long])
+                                                    }, (a, b) => (a._1 + b._1, a._2 + b._2))
+        val averageNumWords: VertexRDD[Double] = numberOfWords.mapValues( (id, value) =>
+                                                                        value match { case (count, totalNumWords) => totalNumWords / count } )
+        averageNumWords.collect().foreach(x => println("Vertex ID: " + x._1 + " Average Number of Words: " + x._2))
         spark.stop()
     }
 }

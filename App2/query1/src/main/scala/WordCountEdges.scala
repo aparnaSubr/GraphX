@@ -5,19 +5,15 @@ import org.apache.spark.rdd.RDD
 object GraphXQuery1 {
 
 def main(args: Array[String]) {
-        if (args.length < 1) {
-            System.err.println("Usage: GraphXQuery1 <src-folder>")
-            System.exit(0)
-        }
         
         val spark = SparkSession
         .builder
         .master("spark://10.254.0.83:7077")
-        .appName("GraphXPageRank")
-        .config("spark.driver.memory", "5g")
+        .appName("WordCountEdges")
+        .config("spark.driver.memory", "2g")
         .config("spark.eventLog.enabled", "true")
         .config("spark.eventLog.dir", "file:///home/ubuntu/logs/spark")
-        .config("spark.executor.memory", "15g")
+        .config("spark.executor.memory", "18g")
         .config("spark.executor.cores", "4")
         .config("spark.task.cpus", "1")
         .config("spark.default.parallelism", "20")
@@ -46,49 +42,28 @@ def main(args: Array[String]) {
                               ((x._2._1, x._2._2), x._1)}.groupByKey()
 
         val defaultVertex = ("default_vertex")
+
         val v = vertices.map{x =>
                              val id = x._1.split("words_")(1).toLong
                              (id, x._2.size.toLong)}.collect().toSeq
+
         val vertexRDD: RDD[(VertexId, Any)] = spark.sparkContext.parallelize(v)
+        
         val e = edges.map{x =>
                           Edge(x._1._1.split("words_")(1).toLong, x._1._2.split("words_")(1).toLong, x._2)}.collect().toSeq
+        
         val edgeRDD: RDD[Edge[Iterable[String]]] = spark.sparkContext.parallelize(e)
 
         val graph = Graph(vertexRDD, edgeRDD, defaultVertex)
 
-        // Query 1
         val edgeCount = graph.triplets.filter{x => x.srcAttr.asInstanceOf[Long] > x.dstAttr.asInstanceOf[Long]}.count()
         val resultRDD = spark.sparkContext.parallelize(Array(edgeCount))
-        resultRDD.collect().foreach(x => println("--------------------------------------------------------------\nNUMBER OF EDGES = " 
-                                    + x + "\n--------------------------------------------------------------"))
+        resultRDD.collect().foreach(x => 
+                                    println("--------------------------------------------------------------\n"
+                                    + "NUMBER OF EDGES = " 
+                                    + x 
+                                    + "\n--------------------------------------------------------------"))
 
-
-        // Query 2
-        def max(a: (VertexId, Int), b: (VertexId, Int)): (VertexId, Int) = {
-          if (a._2 > b._2) a else b
-          }
-
-        val maxVertex: (VertexId, Int) = graph.outDegrees.reduce(max)
-        val listOfVertices = graph.outDegrees.filter{x => x._2 == maxVertex._2}
-        val intVertices = graph.vertices.map{x =>
-                                             (x._1, x._2.asInstanceOf[Long])}
-        def maxLong(a: (VertexId, Long), b: (VertexId, Long)): (VertexId, Long) = {
-        if (a._2 > b._2) a else b}
-        val maxWords = intVertices.reduce(maxLong)
-
-        val result = graph.vertices.filter{x => x._2 == maxWords._2}.collect()
-        result.foreach(x => println("--------------------------------------------------------------\nMOST POPULAR VERTEX ID = "
-                                    + x._1 + "\n--------------------------------------------------------------"))
-
-
-        // Query 3
-        val numberOfWords: VertexRDD[(Long, Long)] = graph.aggregateMessages[(Long, Long)] (
-                                                    triplet => {
-                                                    triplet.sendToDst(1.toLong, triplet.srcAttr.asInstanceOf[Long])
-                                                    }, (a, b) => (a._1 + b._1, a._2 + b._2))
-        val averageNumWords: VertexRDD[Double] = numberOfWords.mapValues( (id, value) =>
-                                                                        value match { case (count, totalNumWords) => totalNumWords / count } )
-        averageNumWords.collect().foreach(x => println("Vertex ID: " + x._1 + " Average Number of Words: " + x._2))
         spark.stop()
     }
 }

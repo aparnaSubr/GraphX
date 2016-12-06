@@ -15,8 +15,6 @@ def runPageRank[VD: ClassTag, ED: ClassTag]
 
         // Initialize the PageRank graph with each edge attribute having
         // weight 1/outDegree and each vertex with attribute resetProb.
-        // When running personalized pagerank, only the source vertex
-        // has an attribute resetProb. All others are set to 0.
         var rankGraph: Graph[Double, Double] = graph
           // Associate the degree with each vertex
           .outerJoinVertices(graph.outDegrees) { (vid, vdata, deg) => deg.getOrElse(0) }
@@ -68,10 +66,10 @@ def main(args: Array[String]) {
         .builder
         .master("spark://10.254.0.83:7077")
         .appName("GraphXPageRank")
-        .config("spark.driver.memory", "5g")
+        .config("spark.driver.memory", "4g")
         .config("spark.eventLog.enabled", "true")
         .config("spark.eventLog.dir", "file:///home/ubuntu/logs/spark")
-        .config("spark.executor.memory", "15g")
+        .config("spark.executor.memory", "16g")
         .config("spark.executor.cores", "4")
         .config("spark.task.cpus", "1")
         .config("spark.default.parallelism", "20")

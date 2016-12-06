@@ -23,9 +23,12 @@ sbt package
 
 cd
 cache_clean
+display_stats >> $1
 
-~/software/spark-2.0.0-bin-hadoop2.6/bin/spark-submit ~/GraphX/graphx/target/scala-2.11/graphx-pagerank_2.11-1.0.jar 'hdfs:///user/ubuntu/dataset.txt' 20
+~/software/spark-2.0.0-bin-hadoop2.6/bin/spark-submit ~/GraphX/graphx/target/scala-2.11/graphx-pagerank_2.11-1.0.jar 'hdfs:///user/ubuntu/soc-LiveJournal1.txt' 20
 
 trap SIGHUP SIGKILL SIGTERM SIGINT
+
+display_stats >> $2
 
 cd $current_dir

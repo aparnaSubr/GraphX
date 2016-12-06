@@ -12,19 +12,19 @@ def main(args: Array[String]) {
         .builder
         .master("spark://10.254.0.83:7077")
         .appName("SparkPageRank")
-        .config("spark.driver.memory", "5g")
+        .config("spark.driver.memory", "4g")
         .config("spark.eventLog.enabled", "true")
         .config("spark.eventLog.dir", "file:///home/ubuntu/logs/spark")
-        .config("spark.executor.memory", "15g")
+        .config("spark.executor.memory", "16g")
         .config("spark.executor.cores", "4")
         .config("spark.task.cpus", "1")
         .config("spark.default.parallelism", "20")
         .getOrCreate()
         
         val iters = if (args.length > 1) args(1).toInt else 20
-        val lines = spark.read.textFile(args(0)).rdd
+        val lines = spark.sparkContext.textFile(args(0), 20)
         val links = lines.map{ s => val parts = s.split("\\s+")
-        (parts(0), parts(1)) }.distinct().groupByKey().repartition(20).cache()
+        (parts(0), parts(1)) }.distinct().groupByKey().cache()
         var ranks = links.mapValues(v => 1.0)
         
         for (i <- 1 to iters) {
